@@ -1,0 +1,997 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>A x A</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400;1,700&family=Caveat:wght@500;700&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --board:   #0C0908;
+      --board2:  #161210;
+      --paper:   #F2E8C6;
+      --paper2:  #EAD9A8;
+      --paper3:  #F8F2E4;
+      --pink:    #D94F6E;
+      --pink-l:  #F2A0B8;
+      --pink-d:  #9E2245;
+      --tp:      #281810;
+      --tb:      #EEE0C0;
+      --td:      #7A6A5A;
+      --tdb:     #8A7A6A;
+      --tape:    rgba(238,228,182,.75);
+      --sh:      3px 5px 24px rgba(0,0,0,.68);
+      --ease:    .24s cubic-bezier(.4,0,.2,1);
+    }
+
+    html { scroll-behavior: smooth; }
+    body { font-family: 'DM Sans', sans-serif; background: var(--board); color: var(--tb); overflow-x: hidden; }
+
+    /* papel rasgado */
+    .torn-static {
+      clip-path: polygon(
+        0% 8%,  2% 3%,  3% 11%, 5% 5%,  6% 1%,  8% 7%,  9% 0%,  11% 9%,  13% 4%,
+        14% 1%, 16% 6%, 17% 12%,19% 3%, 20% 0%, 22% 8%, 24% 4%, 25% 10%,
+        27% 2%, 28% 6%, 30% 0%, 31% 8%, 33% 5%, 34% 11%,36% 2%, 37% 7%,
+        39% 1%, 40% 5%, 42% 9%, 44% 0%, 45% 6%, 47% 3%, 48% 10%,50% 4%,
+        51% 1%, 53% 8%, 55% 5%, 56% 0%, 58% 7%, 59% 3%, 61% 9%, 62% 1%,
+        64% 5%, 66% 0%, 67% 8%, 69% 4%, 70% 11%,72% 2%, 73% 7%, 75% 1%,
+        77% 5%, 78% 9%, 80% 0%, 81% 6%, 83% 3%, 84% 10%,86% 4%, 87% 1%,
+        89% 8%, 91% 5%, 92% 0%, 94% 7%, 95% 3%, 97% 9%, 98% 2%, 100% 5%,
+        100% 92%,
+        98% 98%,97% 100%,95% 94%,94% 100%,92% 97%,91% 100%,89% 93%,
+        88% 100%,86% 96%,84% 100%,83% 93%,81% 99%,80% 100%,78% 94%,
+        77% 100%,75% 97%,73% 92%,72% 100%,70% 95%,69% 99%,67% 100%,
+        66% 93%,64% 97%,62% 100%,61% 94%,59% 100%,58% 96%,56% 100%,
+        55% 92%,53% 98%,51% 100%,50% 95%,48% 100%,47% 93%,45% 99%,
+        44% 100%,42% 96%,40% 92%,39% 100%,37% 97%,36% 100%,34% 94%,
+        33% 99%,31% 100%,30% 93%,28% 97%,27% 100%,25% 95%,24% 100%,
+        22% 92%,20% 98%,19% 100%,17% 95%,16% 100%,14% 93%,13% 99%,
+        11% 100%,9% 96%, 8% 92%, 6% 100%,5% 97%, 3% 100%,2% 94%, 0% 97%
+      );
+      filter: drop-shadow(3px 7px 18px rgba(0,0,0,.75));
+    }
+
+    /* hero */
+    #intro {
+      min-height: 100svh;
+      background: var(--paper);
+      display: flex; align-items: center;
+      padding: 4rem 2rem;
+      position: relative; overflow: hidden;
+    }
+    .hero-grid {
+      max-width: 1060px; margin: 0 auto; width: 100%;
+      display: grid; grid-template-columns: 1fr 1fr;
+      gap: 4rem; align-items: center;
+    }
+    .hero-title {
+      font-family: 'Playfair Display', serif;
+      font-size: clamp(3.2rem, 7.5vw, 6rem); line-height: .96;
+      color: var(--tp); margin-bottom: .4rem;
+    }
+    .hero-title em { color: var(--pink); font-style: italic; }
+    .hero-ax {
+      font-family: 'Playfair Display', serif; font-style: italic;
+      font-size: clamp(1.4rem, 3vw, 2.2rem);
+      color: var(--pink); letter-spacing: .2em; margin-bottom: 1.4rem;
+      display: block;
+    }
+    .hero-desc {
+      font-size: .95rem; color: var(--td); line-height: 1.88; max-width: 400px;
+    }
+    .hero-sticker {
+      position: absolute; bottom: 2.5rem; right: 2rem;
+      width: 72px; mix-blend-mode: multiply; opacity: .82;
+      transform: rotate(10deg); pointer-events: none;
+    }
+    .dahlia-wrap {
+      display: inline-block; position: relative;
+      background: var(--paper3); padding: 10px;
+    }
+    .dahlia-wrap img {
+      display: block; width: min(380px, 86vw);
+      filter: contrast(1.06);
+    }
+    .hero-right { display: flex; justify-content: center; }
+
+    /* blend */
+    #blend {
+      background: var(--board);
+      padding: 5rem 2rem 4rem;
+    }
+    .blend-inner { max-width: 960px; margin: 0 auto; position: relative; }
+    .sec-tag {
+      font-family: 'Caveat', cursive; font-size: .95rem;
+      color: var(--tdb); margin-bottom: .45rem; letter-spacing: .04em;
+    }
+    .sec-title {
+      font-family: 'Playfair Display', serif;
+      font-size: clamp(1.9rem, 5vw, 3rem); line-height: 1.18;
+      margin-bottom: .75rem;
+    }
+    .sec-title.light { color: var(--tb); }
+    .sec-title.dark  { color: var(--tp); }
+    .sec-title em { color: var(--pink); font-style: italic; }
+    .sec-sub {
+      font-size: .94rem; line-height: 1.8; max-width: 520px; margin-bottom: 2.5rem;
+    }
+    .sec-sub.light { color: var(--tdb); }
+    .sec-sub.dark  { color: var(--td); }
+
+    .tabs {
+      display: flex; gap: .65rem; flex-wrap: wrap; margin-bottom: 2rem;
+    }
+    .tab-btn {
+      padding: .5rem 1.5rem; border-radius: 2px; min-height: 44px;
+      border: 1px solid rgba(255,255,255,.1);
+      background: rgba(255,255,255,.04);
+      font-family: 'Caveat', cursive; font-size: 1.05rem;
+      color: var(--tdb); cursor: pointer;
+      transition: all var(--ease);
+      box-shadow: 1px 2px 6px rgba(0,0,0,.3);
+      display: flex; align-items: center;
+    }
+    .tab-btn:hover  { background: rgba(255,255,255,.08); color: var(--tb); }
+    .tab-btn.active {
+      background: var(--paper3); color: var(--tp);
+      border-color: transparent;
+      box-shadow: 2px 3px 10px rgba(0,0,0,.45);
+    }
+
+    /* spotify view */
+    .spo-view {
+      background: var(--board2); border-radius: 4px;
+      overflow: hidden;
+      animation: fadeUp .28s ease;
+    }
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(10px); }
+      to   { opacity: 1; transform: none; }
+    }
+    .spo-header {
+      display: flex; align-items: flex-end; gap: 2rem;
+      padding: 2.5rem 2rem 1.5rem;
+      position: relative;
+    }
+    .spo-header::after {
+      content: '';
+      position: absolute; inset: 0;
+      background: linear-gradient(transparent 40%, var(--board2) 100%);
+      pointer-events: none;
+    }
+    .spo-cover-wrap {
+      width: 160px; height: 160px; flex-shrink: 0;
+      background: var(--paper2); padding: 6px;
+      position: relative; z-index: 1;
+    }
+    .spo-cover-wrap img {
+      display: block; width: 100%; height: 100%;
+      object-fit: cover;
+    }
+    .spo-meta { position: relative; z-index: 1; }
+    .spo-type {
+      font-size: .72rem; color: var(--tb); text-transform: uppercase;
+      letter-spacing: .1em; margin-bottom: .3rem; opacity: .7;
+    }
+    .spo-name {
+      font-family: 'Playfair Display', serif; font-style: italic;
+      font-size: clamp(2rem, 6vw, 3.5rem); color: var(--tb); line-height: 1;
+      margin-bottom: .5rem;
+    }
+    .spo-count { font-size: .82rem; color: var(--tdb); }
+    .spo-list { padding: .5rem 0 1.5rem; }
+    .spo-row {
+      display: flex; align-items: center; gap: .9rem;
+      padding: .5rem 2rem;
+      transition: background var(--ease);
+    }
+    .spo-row:hover { background: rgba(255,255,255,.06); }
+    .spo-num { font-size: .85rem; color: var(--tdb); width: 20px; text-align: right; flex-shrink: 0; }
+    .spo-art {
+      width: 38px; height: 38px; border-radius: 2px; flex-shrink: 0;
+      background-color: rgba(255,255,255,.06);
+      background-size: cover; background-position: center;
+    }
+    .spo-info { flex: 1; min-width: 0; }
+    .spo-title {
+      display: block; font-size: .88rem; font-weight: 500;
+      color: var(--tb); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .spo-artist { font-size: .75rem; color: var(--tdb); }
+    .spo-who {
+      font-family: 'Caveat', cursive; font-size: .8rem;
+      color: var(--tdb); flex-shrink: 0; padding-right: .5rem; opacity: .7;
+    }
+    .spo-who.ambos { color: var(--pink-l); opacity: 1; font-weight: 700; }
+    .spo-link {
+      font-size: .72rem; color: var(--tdb);
+      text-decoration: none; flex-shrink: 0;
+      opacity: 0; transition: opacity var(--ease);
+      white-space: nowrap;
+    }
+    .spo-row:hover .spo-link { opacity: .6; }
+    .spo-link:hover { opacity: 1 !important; color: var(--tb); }
+    @media (hover: none) { .spo-link { opacity: .42; } }
+
+    /* collage y */
+    #collage { background: var(--board); }
+    .collage-header { max-width: 960px; margin: 0 auto; padding: 4rem 2rem 0; }
+    .dome-wrap {
+      height: 65vh; min-height: 420px; max-height: 700px;
+      position: relative; margin-top: 1.5rem;
+    }
+
+    /* dome: root */
+    .dg-root {
+      position: relative; width: 100%; height: 100%;
+      --radius: 520px; --viewer-pad: 72px;
+      --circ: calc(var(--radius) * 3.14159);
+      --rot-y: calc(360deg / var(--segments-x) / 2);
+      --rot-x: calc(360deg / var(--segments-y) / 2);
+      --item-width:  calc(var(--circ) / var(--segments-x));
+      --item-height: calc(var(--circ) / var(--segments-y));
+    }
+    .dg-root * { box-sizing: border-box; }
+    .dg-sphere, .dg-item, .dg-tile { transform-style: preserve-3d; }
+
+    main.dg-main {
+      position: absolute; inset: 0;
+      display: grid; place-items: center;
+      overflow: hidden; touch-action: none;
+      user-select: none; -webkit-user-select: none;
+    }
+    .dg-stage {
+      width: 100%; height: 100%;
+      display: grid; place-items: center;
+      perspective: calc(var(--radius) * 2);
+      perspective-origin: 50% 50%;
+      contain: layout paint size;
+    }
+    .dg-sphere { will-change: transform; }
+
+    .dg-item {
+      width:  calc(var(--item-width)  * var(--item-size-x));
+      height: calc(var(--item-height) * var(--item-size-y));
+      position: absolute; top: -999px; bottom: -999px; left: -999px; right: -999px;
+      margin: auto; transform-origin: 50% 50%; backface-visibility: hidden;
+      transition: transform 300ms;
+      transform:
+        rotateY(calc(var(--rot-y) * (var(--offset-x) + (var(--item-size-x) - 1) / 2) + var(--rot-y-delta, 0deg)))
+        rotateX(calc(var(--rot-x) * (var(--offset-y) - (var(--item-size-y) - 1) / 2) + var(--rot-x-delta, 0deg)))
+        translateZ(var(--radius));
+    }
+    .dg-tile {
+      position: absolute; display: block; inset: 8px;
+      border-radius: 14px; overflow: hidden;
+      backface-visibility: hidden; cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+      touch-action: manipulation; pointer-events: auto;
+      transform: translateZ(0); transition: transform 300ms;
+    }
+    .dg-tile:focus { outline: none; }
+    .dg-tile img { width: 100%; height: 100%; object-fit: cover; pointer-events: none; backface-visibility: hidden; }
+    .dg-tile-ref { background: transparent; pointer-events: none; }
+
+    .dg-ov, .dg-ov-blur {
+      position: absolute; inset: 0; z-index: 3; pointer-events: none;
+    }
+    .dg-ov {
+      background-image: radial-gradient(rgba(0,0,0,0) 58%, var(--dg-blur-color, #0C0908) 100%);
+    }
+    .dg-ov-blur {
+      -webkit-mask-image: radial-gradient(rgba(0,0,0,0) 66%, var(--dg-blur-color, #0C0908) 90%);
+      mask-image:         radial-gradient(rgba(0,0,0,0) 66%, var(--dg-blur-color, #0C0908) 90%);
+      backdrop-filter: blur(3px);
+    }
+    .dg-edge {
+      position: absolute; left: 0; right: 0; height: 110px;
+      z-index: 5; pointer-events: none;
+      background: linear-gradient(to bottom, transparent, var(--dg-blur-color, #0C0908));
+    }
+    .dg-edge-top { top: 0; transform: rotate(180deg); }
+    .dg-edge-bot { bottom: 0; }
+
+    .dg-viewer {
+      position: absolute; inset: 0; z-index: 20; pointer-events: none;
+      display: flex; align-items: center; justify-content: center;
+      padding: var(--viewer-pad);
+    }
+    .dg-frame { height: 100%; aspect-ratio: 1; display: flex; }
+    @media (max-aspect-ratio: 1/1) { .dg-frame { height: auto; width: 100%; } }
+
+    .dg-scrim {
+      position: absolute; inset: 0; z-index: 10;
+      background: rgba(0,0,0,.5); pointer-events: none;
+      opacity: 0; transition: opacity 500ms ease;
+      backdrop-filter: blur(4px);
+    }
+    .dg-root[data-enlarging='true'] .dg-scrim { opacity: 1; pointer-events: all; }
+
+    .dg-enlarge {
+      position: absolute; z-index: 30; overflow: hidden;
+      border-radius: 14px;
+      box-shadow: 0 14px 48px rgba(0,0,0,.65);
+    }
+    .dg-enlarge img { width: 100%; height: 100%; object-fit: cover; display: block; }
+
+    /* dedicatorias */
+    #favorite {
+      background: var(--paper);
+      padding: 5rem 2rem 5rem;
+      box-shadow: 0 8px 48px rgba(0,0,0,.7), 0 -3px 0 rgba(255,255,255,.03);
+      position: relative; overflow: hidden;
+    }
+    .fav-flowers-gif {
+      position: absolute; top: 3rem; right: 1.5rem;
+      width: 64px; mix-blend-mode: multiply; opacity: .72;
+      transform: rotate(5deg); pointer-events: none;
+    }
+    .fav-inner { max-width: 960px; margin: 0 auto; }
+    .fav-grid {
+      display: grid; grid-template-columns: 1fr 1fr;
+      gap: 4rem; align-items: start;
+    }
+    .ded-card {
+      background: var(--paper3); padding: 1.8rem;
+      box-shadow: var(--sh); position: relative;
+      transform: rotate(-.4deg);
+      outline: 1.5px dashed rgba(120,90,50,.22);
+      outline-offset: 7px;
+    }
+    .ded-card::before {
+      content: '';
+      position: absolute; top: -12px; left: 36px;
+      width: 66px; height: 19px; background: var(--tape); border-radius: 1px;
+    }
+    .ded-label { font-family: 'Caveat', cursive; font-size: .95rem; color: var(--td); margin-bottom: .8rem; }
+    .ded-song {
+      font-family: 'Playfair Display', serif; font-style: italic;
+      font-size: clamp(1.4rem, 3.5vw, 2rem); color: var(--tp);
+      line-height: 1.2; margin-bottom: .25rem;
+    }
+    .ded-artist { font-size: .9rem; color: var(--td); margin-bottom: 1.2rem; }
+    .ded-note { font-family: 'Caveat', cursive; font-size: 1.1rem; color: var(--pink-d); line-height: 1.65; }
+    .lily-pol { margin-top: 2rem; display: inline-block; position: relative; }
+    .lily-pol-frame {
+      background: var(--paper2); padding: 7px 7px 34px;
+      box-shadow: var(--sh); transform: rotate(1.4deg);
+      display: block; position: relative;
+    }
+    .lily-pol-frame img { display: block; width: 160px; height: 180px; object-fit: cover; }
+    .my-ded h3 {
+      font-family: 'Playfair Display', serif; font-style: italic;
+      font-size: 1.3rem; color: var(--tp); margin-bottom: .35rem;
+    }
+    .my-ded-sub { font-size: .85rem; color: var(--td); margin-bottom: 1.4rem; line-height: 1.6; }
+    .ded-list { display: flex; flex-direction: column; gap: .65rem; }
+    .ded-song-row {
+      display: flex; align-items: center; gap: .75rem;
+      background: var(--paper3); padding: .7rem 1rem;
+      box-shadow: 1px 2px 8px rgba(0,0,0,.2), inset 0 0 0 1px rgba(120,90,50,.1);
+      position: relative;
+    }
+    .ded-song-row:nth-child(odd)  { transform: rotate(-.25deg); }
+    .ded-song-row:nth-child(even) { transform: rotate(.2deg); }
+    .ded-song-row::before {
+      content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 3px;
+      background: var(--pink);
+    }
+    .ded-art {
+      width: 38px; height: 38px; flex-shrink: 0; border-radius: 2px;
+      background-size: cover; background-position: center;
+      background-color: rgba(217,79,110,.1);
+    }
+    .ded-song-info { flex: 1; min-width: 0; }
+    .ded-song-title { font-size: .86rem; font-weight: 500; color: var(--tp); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .ded-song-art2 { font-size: .74rem; color: var(--td); margin-top: .08rem; }
+
+    /* texto libre */
+    #ask { padding: 4rem 2rem; min-height: 4rem; }
+    .ask-inner { max-width: 960px; margin: 0 auto; }
+
+    /* footer */
+    footer {
+      background: var(--board2); text-align: center;
+      padding: 3.5rem 2rem 3rem; position: relative; overflow: hidden;
+    }
+    .footer-ax {
+      font-family: 'Playfair Display', serif; font-style: italic;
+      font-size: clamp(5rem, 15vw, 10rem); line-height: 1;
+      color: var(--pink); opacity: .12;
+      position: absolute; top: 0; left: 50%; transform: translateX(-50%);
+      white-space: nowrap; pointer-events: none; letter-spacing: .12em;
+    }
+    .footer-body { position: relative; z-index: 1; }
+    .footer-body p { font-family: 'Caveat', cursive; font-size: 1.2rem; color: var(--tdb); line-height: 1.9; }
+    .footer-body strong { color: var(--pink); }
+    .footer-hyd { margin-top: 1.5rem; display: flex; justify-content: center; }
+    .footer-hyd img { height: 80px; width: auto; mix-blend-mode: screen; opacity: .75; }
+
+    /* modal lightbox */
+    #photoModal {
+      position: fixed; inset: 0; z-index: 9999;
+      background: rgba(0,0,0,.88);
+      display: flex; align-items: center; justify-content: center;
+      cursor: zoom-out;
+      opacity: 0; pointer-events: none;
+      transition: opacity .22s ease;
+    }
+    #photoModal.open { opacity: 1; pointer-events: all; }
+    #photoModalImg {
+      max-width: 90vw; max-height: 90vh; object-fit: contain;
+      border-radius: 10px; box-shadow: 0 12px 60px rgba(0,0,0,.85);
+      transition: transform .22s ease;
+    }
+    #photoModal .modal-close {
+      position: absolute; top: 1.2rem; right: 1.5rem;
+      font-family: 'Caveat', cursive; font-size: 1.6rem; color: rgba(255,255,255,.55);
+      cursor: pointer; line-height: 1; user-select: none;
+    }
+    #photoModal .modal-close:hover { color: #fff; }
+
+    /* carta section */
+    #ask { background: var(--board); padding: 5rem 2rem 4.5rem; }
+    .carta-wrap { max-width: 620px; margin: 0 auto; text-align: center; }
+    .carta-paper {
+      background: var(--paper3); padding: 3rem 2.8rem 2.5rem;
+      box-shadow: var(--sh); position: relative;
+      transform: rotate(-.3deg); margin-top: 1.4rem;
+      outline: 1.5px dashed rgba(120,90,50,.18); outline-offset: 7px;
+    }
+    .carta-paper::before {
+      content: ''; position: absolute; top: -13px; left: 50%; transform: translateX(-50%);
+      width: 90px; height: 18px; background: var(--tape); border-radius: 1px;
+    }
+    .carta-text {
+      font-family: 'Caveat', cursive; font-size: 1.28rem; color: var(--tp);
+      line-height: 1.95; text-align: left;
+    }
+    .carta-firma {
+      font-family: 'Playfair Display', serif; font-style: italic;
+      font-size: 1.1rem; color: var(--pink-d); margin-top: 1.6rem; text-align: right;
+    }
+
+    /* polaroids 2x2 */
+    .ded-photos {
+      display: grid; grid-template-columns: 1fr 1fr;
+      gap: .9rem; margin-top: 2rem;
+    }
+    .ded-photos .lily-pol-frame img { width: 100%; height: 140px; }
+
+    /* responsive */
+    @media (max-width: 768px) {
+      .hero-grid { grid-template-columns: 1fr; text-align: center; }
+      .hero-desc { margin: 0 auto; }
+      .hero-right { order: -1; }
+      .dahlia-wrap img { width: min(280px, 80vw); }
+      .fav-grid { grid-template-columns: 1fr; }
+      .fav-flowers-gif { display: none; }
+    }
+    @media (max-width: 640px) {
+      #intro, #blend, #favorite, #ask { padding-left: 1.25rem; padding-right: 1.25rem; }
+      .collage-header { padding-left: 1.25rem; padding-right: 1.25rem; }
+      .spo-row { padding-left: 1rem; padding-right: 1rem; }
+      .spo-cover-wrap { width: 120px; height: 120px; }
+      .spo-name { font-size: 1.8rem; }
+    }
+    @media (min-width: 769px) and (max-width: 1024px) {
+      .hero-grid { gap: 2rem; }
+      .spo-cover-wrap { width: 130px; height: 130px; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- hero -->
+<section id="intro">
+  <div class="hero-grid">
+    <div class="hero-left">
+      <h1 class="hero-title">Nuestro<br><em>Blend</em></h1>
+      <span class="hero-ax">A x A</span>
+      <p class="hero-desc">
+        Tus canciones y las mias, juntas en un solo lugar.
+        Dos playlists, una historia. &lt;3
+      </p>
+    </div>
+    <div class="hero-right">
+      <img src="img/dahlia.png" alt="" style="display:block;width:min(380px,86vw);filter:contrast(1.06);" />
+    </div>
+  </div>
+</section>
+
+<!-- blend -->
+<section id="blend">
+  <div class="blend-inner">
+    <p class="sec-tag">our playlist</p>
+    <h2 class="sec-title light">El <em>Blend</em></h2>
+    <p class="sec-sub light">
+      Selecciona una playlist para verla. Separé de quién es
+      cada canción y las junté también. <3
+    </p>
+
+    <div class="tabs" role="tablist">
+      <button class="tab-btn active" data-tab="blend">Juntos</button>
+      <button class="tab-btn"        data-tab="her">Tuyas</button>
+      <button class="tab-btn"        data-tab="me">Mias</button>
+    </div>
+
+    <div class="spo-view" id="spoView">
+      <div class="spo-header" id="spoHeader">
+        <div class="spo-cover-wrap" id="spoCoverWrap">
+          <img id="spoCoverImg" src="img/dahlia.jpg" alt="cover" />
+        </div>
+        <div class="spo-meta">
+          <p class="spo-type">Playlist</p>
+          <h2 class="spo-name" id="spoName">Juntos</h2>
+          <p class="spo-count" id="spoCount">—</p>
+        </div>
+      </div>
+      <div class="spo-list" id="spoList"></div>
+    </div>
+  </div>
+</section>
+
+<!-- collage -->
+<section id="collage">
+  <div class="collage-header">
+    <p class="sec-tag">recuerdos</p>
+    <h2 class="sec-title light">Nuestro <em>collage</em></h2>
+    <p class="sec-sub light" style="margin-bottom:0">Puedes tocar una foto para abrirla, y aún podemos poner muchas más fotos...</p>
+  </div>
+  <div class="dome-wrap">
+    <div id="domeRoot" style="position:relative;width:100%;height:100%;"></div>
+  </div>
+</section>
+
+<!-- dedicatorias -->
+<section id="favorite">
+  <img src="img/ekkant-flowers-11015.gif" class="fav-flowers-gif" aria-hidden="true" alt="" />
+  <div class="fav-inner">
+    <p class="sec-tag" style="color:var(--td);">las canciones más especiales para mi.</p>
+    <h2 class="sec-title dark" style="margin-bottom:2.5rem;">
+      Las que me <em>dedicaste</em>
+    </h2>
+
+    <div class="fav-grid">
+
+      <div>
+        <p style="font-family:'Caveat',cursive;font-size:.95rem;color:var(--td);margin-bottom:.8rem;">
+          tu dedicatoria para mi
+        </p>
+        <div class="ded-card">
+          <p class="ded-label">esta canción especialmente, es la que más emoción causó en mi.</p>
+          <div style="display:flex;gap:1rem;align-items:flex-start;margin-bottom:1.2rem;">
+            <img src="covers/yo_08.jpg" alt="Contigo en la Distancia"
+              style="width:76px;height:76px;object-fit:cover;border-radius:3px;flex-shrink:0;box-shadow:2px 4px 12px rgba(0,0,0,.35);">
+            <div>
+              <p class="ded-song" id="herDedSong" style="margin-bottom:.2rem">Contigo en la Distancia</p>
+              <p class="ded-artist" id="herDedArtist">Lisa Ono</p>
+            </div>
+          </div>
+          <p class="ded-note" id="herDedNote">
+            Cada vez que la escucho me imagino a nosotros dos cantándola en sintonía... &lt;3
+          </p>
+        </div>
+        <div class="ded-photos">
+          <!-- foto 1 -->
+          <div class="lily-pol-frame" style="transform:rotate(1.4deg)">
+            <img src="covers/ella_03.jpg" alt="" />
+          </div>
+          <!-- foto 2 -->
+          <div class="lily-pol-frame" style="transform:rotate(-1.8deg)">
+            <img src="covers/ella_17.jpg" alt="" />
+          </div>
+          <!-- foto 3 -->
+          <div class="lily-pol-frame" style="transform:rotate(.7deg)">
+            <img src="covers/ella_04.jpg" alt="" />
+          </div>
+          <!-- foto 4 -->
+          <div class="lily-pol-frame" style="transform:rotate(-1.2deg)">
+            <img src="covers/ella_07.jpg" alt="" />
+          </div>
+        </div>
+      </div>
+
+      <div class="my-ded">
+        <h3>las mias para vos</h3>
+        <p class="my-ded-sub">
+          Hay varias, unas las pongo aquí porque son para ti, y otras porque creo que te gustarán.
+        </p>
+        <div class="ded-list" id="dedList"></div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- carta -->
+<section id="ask">
+  <div class="ask-inner">
+    <div class="carta-wrap">
+      <p class="sec-tag" style="color:var(--td)">pour toi</p>
+      <div class="carta-paper">
+        <p class="carta-text">
+          <em style="font-size:1.45rem;color:var(--pink-d);">Chère Aisha,</em><br>
+          Tu es tellement résiliente…<br>
+          tu me rends fier rien qu’en existant.<br>
+          comme tu me l’as dit hier soir, ton balcon et la musique sont ta façon de survivre,<br>
+          sans demander la permission à la douleur.<br>
+          La façon dont tu découvres quelque chose de nouveau et qu’au lieu de t’y perdre,<br>
+          tu trouves des façons d’être toi-même…<br>
+          c’est incroyable. Tout simplement incroyable.<br>
+          Et moi, qui suis toujours en train de me préparer à tout,<br>
+          je ne m’étais pas préparé à toi.<br>
+          Je t’aime tellement, mon amour.
+        </p>
+        <p class="carta-firma"> 4/19/2026</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- footer -->
+<footer>
+  <div class="footer-ax" aria-hidden="true">A x A</div>
+  <div class="footer-body">
+    <p>
+      Hecho con todo el amor del mundo.<br>
+      Para <strong>vos</strong>, siempre. &lt;3
+    </p>
+    <div class="footer-hyd" aria-hidden="true">
+      <img src="img/dailyfina-hydrangea-26262.gif" alt="" />
+    </div>
+  </div>
+</footer>
+
+<!-- lightbox para collage -->
+<div id="photoModal" onclick="if(event.target===this||event.target.classList.contains('modal-close'))this.classList.remove('open')">
+  <span class="modal-close" aria-label="cerrar">✕</span>
+  <img id="photoModalImg" alt="foto" />
+</div>
+
+<script>
+/* playlist */
+const mySongs = [
+  { title: "No Se Si Salga El Sol",               artist: "Manuel Medrano",         img: "covers/yo_01.png", dedicated: false,  url: "https://music.youtube.com/watch?v=9hy60TjxEwA" },
+  { title: "I Fall In Love Too Easily",           artist: "Chet Baker",             img: "covers/yo_02.jpg", dedicated: false,  url: "https://music.youtube.com/watch?v=y6qfgwy77ms" },
+  { title: "spin u around",                       artist: "nafeesisboujee, kkanji", img: "covers/yo_03.jpg", dedicated: false, url: "https://music.youtube.com/watch?v=3yvgLBNCtK4" },
+  { title: "I Only Have Eyes for You",            artist: "Tashaki Miyaki",         img: "covers/yo_04.jpg", dedicated: false, url: "https://music.youtube.com/watch?v=bbW8QEPS5SE" },
+  { title: "Tengo Ganas",                         artist: "Andres Cepeda",          img: "covers/yo_05.jpg", dedicated: true, url: "https://music.youtube.com/watch?v=fyGs6zrGEOA" },
+  { title: "La Luna en Tu Mirada",                artist: "Los Zafiros",            img: "covers/yo_06.jpg", dedicated: false, url: "https://music.youtube.com/watch?v=oQlh8FGnm0o" },
+  { title: "bossa nova",                          artist: "aupinard",               img: "covers/yo_07.jpg", dedicated: true, url: "https://music.youtube.com/watch?v=MuHsM0zgloM" },
+  { title: "ベサメ・ムーチョ (Bésame mucho)",         artist: "Lisa Ono",               img: "covers/yo_08.jpg", dedicated: false,  url: "https://music.youtube.com/watch?v=7ejA6VDP4Ps" },
+  { title: "Fly Me To The Moon - 2008 Remastered",artist: "Frank Sinatra",          img: "covers/yo_09.jpg", dedicated: false,  url: "https://music.youtube.com/watch?v=ZEcqHA7dbwM" },
+  { title: "Amoureux (Last Kiss)",                artist: "VICTOR",                 img: "covers/yo_10.jpg", dedicated: false, url: "https://music.youtube.com/watch?v=mAyITNPZklY" },
+  { title: "Amor Mio",                            artist: "Frank Sark",             img: "covers/yo_11.jpg", dedicated: false,  url: "https://music.youtube.com/watch?v=sPGg0NQnCDQ" },
+  { title: "j'ai encore reve d elle",             artist: "aupinard",               img: "covers/yo_12.jpg", dedicated: true, url: "https://music.youtube.com/watch?v=FzukOAr0v4g" },
+  { title: "Ama De Mi Sol",                       artist: "Milo J",                 img: "covers/yo_13.jpg", dedicated: false, url: "https://music.youtube.com/watch?v=_gEQw0QBdNU" },
+  { title: "CARENCIAS DE CORDURA",                artist: "Milo J",                 img: "covers/yo_14.jpg", dedicated: true, url: "https://music.youtube.com/watch?v=ruAxR8ttWq8" },
+  { title: "Love You Like a Love Song",           artist: "Selena Gomez",           img: "covers/yo_15.jpg", dedicated: false, url: "https://music.youtube.com/watch?v=XhGior4O2eM" },
+  { title: "Parisienne High Level",               artist: "aupinard",               img: "covers/yo_16.jpg", dedicated: false, url: "https://music.youtube.com/watch?v=X5ULpiGVlR0" },
+  { title: "Beso Infinito",                       artist: "Andres Santoyo",         img: "covers/yo_17.jpg", dedicated: true,  url: "https://music.youtube.com/watch?v=YwFIQzZ_sQQ" },
+  { title: "Siete Canciones",                     artist: "Andres Santoyo",         img: "covers/yo_18.png", dedicated: true, url: "https://music.youtube.com/watch?v=-4vi1R7x40I" },
+  { title: "Beso",                                artist: "Jósean Log",             img: "covers/yo_19.jpg", dedicated: false, url: "https://music.youtube.com/watch?v=MY4onER9ALw" },
+  { title: "Bésame (Cnt 1:1)",                      artist: "Darviin",                img: "covers/yo_20.jpg", dedicated: true, url: "https://music.youtube.com/watch?v=K-Y3afQINFA" },
+  { title: "Frances Limon",                       artist: "Los Enanitos Verdes",    img: "covers/yo_21.jpg", dedicated: true, url: "https://music.youtube.com/watch?v=jIwX3YozFQ4" },
+  { title: "Donde Nadie Pueda Ir",                artist: "Manuel Medrano",         img: "covers/yo_22.jpg", dedicated: false,  url: "https://music.youtube.com/watch?v=tlQITUG3a2k" },
+  { title: "Dia tras Dia",                        artist: "Andres Cepeda",          img: "covers/yo_23.jpg", dedicated: false, url: "https://music.youtube.com/watch?v=on_1UJ4T4ys&si=epjwcgYK7MuFHL0T" },
+  { title: "M.",                        artist: "Anıl Emre Daldal",          img: "covers/yo_24.jpg", dedicated: false, url: "https://music.youtube.com/watch?v=wsKhe5rTKw8" },
+  { title: "Niño",                        artist: "Milo J",          img: "covers/yo_13.jpg", dedicated: true, url: "https://music.youtube.com/watch?v=e7F9gpKxlLg" },
+  { title: "Tuyo (Narcos Theme)",                        artist: "Rodrigo Amarante",          img: "covers/yo_25.jpg", dedicated: false, url: "https://music.youtube.com/watch?v=zNPXnAVyAUA" },
+  { title: "Melting",                        artist: "Cuco",          img: "covers/yo_26.jpg", dedicated: true, url: "https://music.youtube.com/watch?v=xIsCh-BA8Ew" },
+];
+
+const herSongs = [
+  { title: "La Gloria Eres Tu",          artist: "Los Tres Diamantes", img: "covers/ella_01.jpg", url: "https://music.youtube.com/watch?v=ekIBjKNQN5I" },
+  { title: "ベサメ・ムーチョ (Bésame mucho)",artist: "Lisa Ono",           img: "covers/yo_08.jpg",   url: "https://music.youtube.com/watch?v=7ejA6VDP4Ps" },
+  { title: "I Love You",                 artist: "Fontaines DC",       img: "covers/ella_03.jpg", url: "https://music.youtube.com/watch?v=_w5b7Kf1E-k" },
+  { title: "He's My Man",                artist: "luvcat",             img: "covers/ella_04.jpg", url: "https://music.youtube.com/watch?v=aAFh22R4PEA" },
+  { title: "Can't Help Falling in Love", artist: "Elvis Presley",      img: "covers/ella_05.jpg", url: "https://music.youtube.com/watch?v=x3X8eBGYY6U" },
+  { title: "Dark Red",                   artist: "Steve Lacy",         img: "covers/ella_06.jpg", url: "https://music.youtube.com/watch?v=Q6FarZpy67M" },
+  { title: "Beso",                       artist: "Jósean Log",         img: "covers/ella_07.jpg", url: "https://music.youtube.com/watch?v=MY4onER9ALw" },
+  { title: "遠く離れても (Contigo en la Distancia)",    artist: "Lisa Ono",           img: "covers/yo_08.jpg", url: "https://music.youtube.com/watch?v=_rWzVvnrx2g" },
+  { title: "Perdido de Amor (Lost In Love) - 1",            artist: "Luiz Bonfa",         img: "covers/ella_09.jpg", url: "https://music.youtube.com/watch?v=7r1tKquhyzU" },
+  { title: "And I Love Her - Remastered 2009",             artist: "The Beatles",        img: "covers/ella_10.jpg", url: "https://music.youtube.com/watch?v=5tc0gLSSU1M" },
+  { title: "Time After Time",            artist: "Cyndi Lauper",       img: "covers/ella_11.jpg", url: "https://music.youtube.com/watch?v=7wBgcalM4c4" },
+  { title: "Don't Dream It's Over",      artist: "Crowded House",      img: "covers/ella_12.jpg", url: "https://music.youtube.com/watch?v=H7UMRkp7m80" },
+  { title: "(I Just) Died in Your Arms (Extended Remix)", artist: "Cutting Crew",       img: "covers/ella_13.jpg", url: "https://music.youtube.com/watch?v=MxUArvDcCi8" },
+  { title: "Join Me in Death",           artist: "HIM",                img: "covers/ella_14.jpg", url: "https://music.youtube.com/watch?v=IK3nKs0KWq8" },
+  { title: "Baby I'm Yours",             artist: "Arctic Monkeys",     img: "covers/ella_15.jpg", url: "https://music.youtube.com/watch?v=atYNqvZcQ3M" },
+  { title: "BIRDS OF A FEATHER",         artist: "Billie Eilish",      img: "covers/ella_16.jpg", url: "https://music.youtube.com/watch?v=WKZO-CWeOVA" },
+  { title: "High Enough",         artist: "K. Flay",      img: "covers/ella_17.jpg", url: "https://music.youtube.com/watch?v=1QpQqt7FLSE" },
+  { title: "Nuestro Juramento",         artist: "Julio Jaramillo",      img: "covers/ella_18.jpg", url: "https://music.youtube.com/watch?v=l2n8si4WoTM" },
+  { title: "Endless Love",         artist: "Boyce Avenue",      img: "covers/ella_19.jpg", url: "https://music.youtube.com/watch?v=I7CEBHmmw_g" },
+  { title: "Nothing's Gonna Change My Love For You",         artist: "Music Travel Love",      img: "covers/ella_20.jpg", url: "https://music.youtube.com/watch?v=W92sU9gD6cg" },
+  { title: "Lean On Me",         artist: "Glee Cast",      img: "covers/ella_21.jpg", url: "https://music.youtube.com/watch?v=qVDVsgYkixY" },
+];
+
+const tabMeta = {
+  blend: { name: "Juntos", cover: "img/cover_juntos.jpg", fallback: "img/dahlia.jpg", gradient: "linear-gradient(160deg,#3A0A1A 0%,#0C0908 60%)" },
+  her:   { name: "Tuyas",  cover: "img/cover_tuyas.jpg",  fallback: "img/her.jpeg",   gradient: "linear-gradient(160deg,#1A0A2E 0%,#0C0908 60%)" },
+  me:    { name: "Mias",   cover: "img/cover_mias.jpg",   fallback: "img/me.jpeg",    gradient: "linear-gradient(160deg,#0A1A2A 0%,#0C0908 60%)" },
+};
+
+function norm(title, artist) {
+  return (title + "|" + artist).toLowerCase().replace(/\s+/g, " ").trim();
+}
+
+function buildBlend() {
+  const sharedKeys = new Set();
+  herSongs.forEach(s => {
+    if (mySongs.some(m => norm(m.title, m.artist) === norm(s.title, s.artist)))
+      sharedKeys.add(norm(s.title, s.artist));
+  });
+  const seen = new Set(), out = [];
+  const n = Math.max(herSongs.length, mySongs.length);
+  for (let i = 0; i < n; i++) {
+    if (i < herSongs.length) {
+      const s = herSongs[i], key = norm(s.title, s.artist);
+      if (!seen.has(key)) { seen.add(key); out.push({ ...s, who: sharedKeys.has(key) ? "ambos" : "tú" }); }
+    }
+    if (i < mySongs.length) {
+      const s = mySongs[i], key = norm(s.title, s.artist);
+      if (!seen.has(key)) { seen.add(key); out.push({ ...s, who: sharedKeys.has(key) ? "ambos" : "yo" }); }
+    }
+  }
+  return out;
+}
+
+function renderTrack(song, index, showWho) {
+  const row = document.createElement("div");
+  row.className = "spo-row";
+  const artStyle = song.img ? `background-image:url('${song.img}')` : "";
+  const whoClass = song.who === "ambos" ? " ambos" : "";
+  row.innerHTML =
+    `<span class="spo-num">${index + 1}</span>` +
+    `<div class="spo-art" style="${artStyle}"></div>` +
+    `<div class="spo-info">` +
+      `<span class="spo-title">${song.title}</span>` +
+      `<span class="spo-artist">${song.artist}</span>` +
+    `</div>` +
+    (showWho ? `<span class="spo-who${whoClass}">${song.who}</span>` : "") +
+    `<a class="spo-link" href="${song.url || '#'}" target="_blank" rel="noopener">abrir ▶</a>`;
+  return row;
+}
+
+function renderSpotify(tab) {
+  const meta  = tabMeta[tab];
+  const songs = (tab === "blend" ? buildBlend()
+              : tab === "her"   ? herSongs.map(s => ({ ...s, who: "ella" }))
+              :                   mySongs.map(s  => ({ ...s, who: "yo"   })))
+              .slice().sort((a, b) => a.title.localeCompare(b.title, 'es', { sensitivity: 'base' }));
+  document.getElementById("spoName").textContent  = meta.name;
+  document.getElementById("spoCount").textContent = songs.length + " canciones";
+  document.getElementById("spoHeader").style.background = meta.gradient;
+  const coverImg = document.getElementById("spoCoverImg");
+  coverImg.src = meta.cover;
+  coverImg.onerror = () => { coverImg.src = meta.fallback; coverImg.onerror = null; };
+  const list = document.getElementById("spoList");
+  list.innerHTML = "";
+  const frag = document.createDocumentFragment();
+  songs.forEach((s, i) => frag.appendChild(renderTrack(s, i, tab === "blend")));
+  list.appendChild(frag);
+  const view = document.getElementById("spoView");
+  view.style.animation = "none";
+  requestAnimationFrame(() => { view.style.animation = ""; });
+}
+
+document.querySelectorAll(".tab-btn").forEach(btn => {
+  btn.addEventListener("click", () => {
+    document.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("active"));
+    btn.classList.add("active");
+    renderSpotify(btn.dataset.tab);
+  });
+});
+
+function loadDedicated() {
+  const list = document.getElementById("dedList");
+  list.innerHTML = "";
+  mySongs.filter(s => s.dedicated).forEach(s => {
+    const row = document.createElement("div");
+    row.className = "ded-song-row";
+    const artStyle = s.img ? `background-image:url('${s.img}')` : "";
+    row.innerHTML =
+      `<div class="ded-art" style="${artStyle}"></div>` +
+      `<div class="ded-song-info">` +
+        `<p class="ded-song-title">${s.title}</p>` +
+        `<p class="ded-song-art2">${s.artist}</p>` +
+      `</div>`;
+    list.appendChild(row);
+  });
+}
+
+renderSpotify("blend");
+loadDedicated();
+
+/* dome gallery */
+(function () {
+  'use strict';
+
+  const clamp     = (v, a, b) => Math.min(Math.max(v, a), b);
+  const wrapSigned = deg => { const a = (((deg + 180) % 360) + 360) % 360; return a - 180; };
+  const normAng    = d   => ((d % 360) + 360) % 360;
+  const dataN      = (el, k, fb) => { const v = parseFloat(el.dataset[k]); return isFinite(v) ? v : fb; };
+  const mk         = (tag, cls) => { const el = document.createElement(tag); if (cls) el.className = cls; return el; };
+
+  const SEG = 35;
+
+  /* fotos del collage */
+  const FOTOS = [
+    'img/dahlia.jpg',
+    'img/lirios.jpg',
+    'img/1.jpg',
+    'img/2.jpg',
+    'img/3.jpg',
+    'img/4.jpg',
+    'img/5.jpg',
+    'img/6.jpg',
+    'img/me.jpeg',
+    'img/her.jpeg',
+    'img/7.jpg',
+    'img/8.jpg',
+  ];
+
+  function buildItems(pool) {
+    const cols  = Array.from({ length: SEG }, (_, i) => -37 + i * 2);
+    const evenY = [-4, -2, 0, 2, 4], oddY = [-3, -1, 1, 3, 5];
+    const coords = cols.flatMap((x, c) => (c % 2 === 0 ? evenY : oddY).map(y => ({ x, y })));
+    const imgs   = pool.map(p => typeof p === 'string' ? { src: p, alt: '' } : p);
+    return coords.map((c, i) => ({ ...c, sx: 2, sy: 2, ...imgs[i % imgs.length] }));
+  }
+
+  function baseRot(ox, oy, sx, sy) {
+    const u = 360 / SEG / 2;
+    return { rotX: u * (oy - (sy - 1) / 2), rotY: u * (ox + (sx - 1) / 2) };
+  }
+
+  function init() {
+    const wrap = document.getElementById('domeRoot');
+    if (!wrap) return;
+
+    /* state */
+    let rot = { x: 0, y: 0 }, startRot, startPos;
+    let dragging = false, moved = false;
+    let lastDragEnd = 0, lastVX = 0, lastVY = 0, lastT = 0, lastPX = 0, lastPY = 0;
+    let inertiaID = null, tapTarget = null;
+
+    /* DOM */
+    const root   = mk('div',  'dg-root');
+    const main   = mk('main', 'dg-main');
+    const stage  = mk('div',  'dg-stage');
+    const sphere = mk('div',  'dg-sphere');
+
+    root.style.setProperty('--segments-x', SEG);
+    root.style.setProperty('--segments-y', SEG);
+    root.style.setProperty('--dg-blur-color', '#0C0908');
+
+    buildItems(FOTOS).forEach(it => {
+      const item = mk('div', 'dg-item');
+      Object.assign(item.dataset, { src: it.src, offsetX: it.x, offsetY: it.y, sizeX: it.sx, sizeY: it.sy });
+      item.style.setProperty('--offset-x', it.x);
+      item.style.setProperty('--offset-y', it.y);
+      item.style.setProperty('--item-size-x', it.sx);
+      item.style.setProperty('--item-size-y', it.sy);
+
+      const tile = mk('div', 'dg-tile');
+      tile.setAttribute('role', 'button');
+      tile.setAttribute('tabindex', '0');
+      const img = document.createElement('img');
+      img.src = it.src; img.alt = it.alt || ''; img.draggable = false;
+      tile.appendChild(img);
+      item.appendChild(tile);
+      sphere.appendChild(item);
+
+      tile.addEventListener('click',     () => onTileClick(tile));
+      tile.addEventListener('pointerup', e  => { if (e.pointerType === 'touch') onTileClick(tile); });
+    });
+
+    const ov1 = mk('div', 'dg-ov');
+    const ov2 = mk('div', 'dg-ov dg-ov-blur');
+    const ef1 = mk('div', 'dg-edge dg-edge-top');
+    const ef2 = mk('div', 'dg-edge dg-edge-bot');
+
+    stage.appendChild(sphere);
+    main.append(stage, ov1, ov2, ef1, ef2);
+    root.appendChild(main);
+    wrap.appendChild(root);
+
+    /* transform */
+    const applyT = (x, y) => {
+      sphere.style.transform =
+        `translateZ(calc(var(--radius) * -1)) rotateX(${x}deg) rotateY(${y}deg)`;
+    };
+    applyT(0, 0);
+
+    /* resize */
+    new ResizeObserver(([e]) => {
+      const { width: w, height: h } = e.contentRect;
+      const basis = w / h >= 1.3 ? w : Math.min(w, h);
+      const r = clamp(Math.min(basis * 0.55, h * 1.35), 480, Infinity);
+      root.style.setProperty('--radius', Math.round(r) + 'px');
+      root.style.setProperty('--viewer-pad', Math.max(8, Math.round(Math.min(w, h) * 0.22)) + 'px');
+      applyT(rot.x, rot.y);
+    }).observe(root);
+
+    /* inertia */
+    const stopI = () => { if (inertiaID) { cancelAnimationFrame(inertiaID); inertiaID = null; } };
+    const startI = (vx, vy) => {
+      let vX = clamp(vx, -1.4, 1.4) * 80, vY = clamp(vy, -1.4, 1.4) * 80;
+      const fri = 0.986, thr = 0.007, maxF = 300;
+      let f = 0;
+      const step = () => {
+        vX *= fri; vY *= fri;
+        if ((Math.abs(vX) < thr && Math.abs(vY) < thr) || ++f > maxF) { inertiaID = null; return; }
+        rot.x = clamp(rot.x - vY / 200, -5, 5);
+        rot.y = wrapSigned(rot.y + vX / 200);
+        applyT(rot.x, rot.y);
+        inertiaID = requestAnimationFrame(step);
+      };
+      stopI(); inertiaID = requestAnimationFrame(step);
+    };
+
+    /* drag */
+    main.addEventListener('pointerdown', e => {
+      stopI(); dragging = true; moved = false;
+      tapTarget = e.target;
+      startRot = { ...rot };
+      startPos = { x: e.clientX, y: e.clientY };
+      lastPX = e.clientX; lastPY = e.clientY;
+      lastT = performance.now(); lastVX = 0; lastVY = 0;
+      main.setPointerCapture(e.pointerId);
+    });
+
+    main.addEventListener('pointermove', e => {
+      if (!dragging || !startPos) return;
+      const dx = e.clientX - startPos.x, dy = e.clientY - startPos.y;
+      if (!moved && dx * dx + dy * dy > 16) moved = true;
+      rot.x = clamp(startRot.x - dy / 22, -5, 5);
+      rot.y = wrapSigned(startRot.y + dx / 22);
+      applyT(rot.x, rot.y);
+      const now = performance.now(), dt = Math.max(now - lastT, 1);
+      lastVX = (e.clientX - lastPX) / dt;
+      lastVY = (e.clientY - lastPY) / dt;
+      lastPX = e.clientX; lastPY = e.clientY; lastT = now;
+    });
+
+    const onUp = () => {
+      if (!dragging) return; dragging = false;
+      if (Math.abs(lastVX) > 0.005 || Math.abs(lastVY) > 0.005) startI(lastVX * 100, lastVY * 100);
+      if (!moved && tapTarget) {
+        const tile = tapTarget.closest?.('.dg-tile:not(.dg-tile-ref)');
+        if (tile) onTileClick(tile);
+      }
+      if (moved) lastDragEnd = performance.now();
+      moved = false; tapTarget = null;
+    };
+    main.addEventListener('pointerup',     onUp);
+    main.addEventListener('pointercancel', onUp);
+
+    /* tile click, lightbox */
+    function onTileClick(el) {
+      if (dragging || moved) return;
+      if (performance.now() - lastDragEnd < 80) return;
+      const src = el.parentElement.dataset.src || el.querySelector('img')?.src || '';
+      if (!src) return;
+      const modal = document.getElementById('photoModal');
+      const mImg  = document.getElementById('photoModalImg');
+      if (modal && mImg) { mImg.src = src; modal.classList.add('open'); }
+    }
+
+    window.addEventListener('keydown', e => {
+      if (e.key !== 'Escape') return;
+      const m = document.getElementById('photoModal');
+      if (m) m.classList.remove('open');
+    });
+  }
+
+  if (document.readyState === 'loading')
+    document.addEventListener('DOMContentLoaded', init);
+  else init();
+})();
+</script>
+</body>
+</html>
